@@ -17,7 +17,13 @@
         <p class="take" id="takeaway">Loading…</p>
         <p class="meta" id="period"></p>
       </div>
-      <span class="badge">Sample data</span>
+      <div class="head-side">
+        <div class="cur-toggle" role="group" aria-label="Currency">
+          <button type="button" id="cur-usd" data-cur="USD" aria-pressed="true">USD $</button>
+          <button type="button" id="cur-khr" data-cur="KHR" aria-pressed="false">Riel ៛</button>
+        </div>
+        <span class="badge">Sample data</span>
+      </div>
     </header>
 
     <section class="tiles" aria-label="Headline figures">
@@ -77,7 +83,7 @@
       </section>
     </div>
 
-    <footer class="foot">Numbers come from <code>data.js</code>. Replace them with your real sales to update this page.</footer>
+    <footer class="foot">Numbers come from <code>data.js</code>. Replace them with your real sales to update this page. <span id="rate"></span></footer>
   </main>
 
   <script src="data.js"></script>
