@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Business Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Figtree:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <div>
+        <h1 id="title">Business Dashboard</h1>
+        <p class="take" id="takeaway">Loading…</p>
+        <p class="meta" id="period"></p>
+      </div>
+      <span class="badge">Sample data</span>
+    </header>
+
+    <section class="tiles" aria-label="Headline figures">
+      <article class="card tile">
+        <p class="label">Revenue</p>
+        <p class="big" id="kpi-revenue">—</p>
+        <p class="sub"><span class="chg" id="chg-revenue">—</span> vs previous 28 days</p>
+      </article>
+      <article class="card tile">
+        <p class="label">Orders</p>
+        <p class="big" id="kpi-orders">—</p>
+        <p class="sub"><span class="chg" id="chg-orders">—</span> vs previous 28 days</p>
+      </article>
+      <article class="card tile">
+        <p class="label">Average order value</p>
+        <p class="big" id="kpi-aov">—</p>
+        <p class="sub"><span class="chg" id="chg-aov">—</span> vs previous 28 days</p>
+      </article>
+      <article class="card tile">
+        <p class="label">New customers</p>
+        <p class="big" id="kpi-new">—</p>
+        <p class="sub"><span class="chg" id="chg-new">—</span> vs previous 28 days</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Daily revenue</h2>
+      <p class="note">Each bar is one day. Weekends are the tall bars.</p>
+      <div class="legend">
+        <span><i class="sw sw-cur"></i>Last 28 days</span>
+        <span><i class="sw"></i>Previous 28 days</span>
+      </div>
+      <div class="chart" id="chart"></div>
+    </section>
+
+    <div class="pair">
+      <section class="card">
+        <h2>Top products</h2>
+        <p class="note">Last 28 days, highest revenue first.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Product</th><th class="hide-sm">Category</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead>
+            <tbody id="products"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Recent orders</h2>
+        <p class="note">The latest ten orders, newest first.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Order</th><th>Date</th><th class="hide-sm">Item</th><th class="num">Amount</th><th>Status</th></tr></thead>
+            <tbody id="orders"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <footer class="foot">Numbers come from <code>data.js</code>. Replace them with your real sales to update this page.</footer>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
