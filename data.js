@@ -3,7 +3,9 @@
 // daily: [date, revenue, orders, new customers]
 window.DASHBOARD_DATA = {
   businessName: "Business Dashboard",
-  currency: "USD", // e.g. "THB" for baht
+  // All amounts below are in US dollars. The page can also show them in riel.
+  defaultCurrency: "USD", // "USD" or "KHR"
+  rielPerDollar: 4100, // exchange rate used for riel
   daily: [
     ["2026-09-05", 1962, 57, 12], ["2026-09-06", 1811, 54, 11], ["2026-09-07", 1350, 40, 8],
     ["2026-09-08", 1288, 39, 9], ["2026-09-09", 1452, 43, 8], ["2026-09-10", 1395, 41, 10],
