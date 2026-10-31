@@ -1,14 +1,36 @@
 (function () {
   const data = window.DASHBOARD_DATA;
   const SVG = "http://www.w3.org/2000/svg";
+  const RATE = Number(data.rielPerDollar) || 4100;
 
-  const money = new Intl.NumberFormat(undefined, { style: "currency", currency: data.currency, maximumFractionDigits: 0 });
-  const money2 = new Intl.NumberFormat(undefined, { style: "currency", currency: data.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const count = new Intl.NumberFormat();
+  // Currency: amounts in data.js are US dollars; riel = dollars x rate.
+  let currency = data.defaultCurrency === "KHR" ? "KHR" : "USD";
+  try {
+    const saved = localStorage.getItem("dashboard-currency");
+    if (saved === "USD" || saved === "KHR") currency = saved;
+  } catch (e) {}
+
+  const usd0 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  const usd2 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const usdShort = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
+  const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+  const short = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+
+  // opts.cents: show cents in USD. opts.compact: short form like 1.2M (used for big riel numbers and chart labels).
+  function money(dollars, opts = {}) {
+    if (currency === "KHR") {
+      const riel = Math.round(dollars * RATE);
+      return (opts.compact || (opts.bigCompact && riel >= 10000000) ? short.format(riel) : whole.format(riel)) + "៛";
+    }
+    if (opts.compact) return usdShort.format(dollars);
+    return (opts.cents ? usd2 : usd0).format(dollars);
+  }
+
+  const count = new Intl.NumberFormat("en-US");
   const pct = (v) => (v >= 0 ? "+" : "") + (v * 100).toFixed(1) + "%";
   const toDate = (s) => new Date(s + "T00:00:00Z");
-  const shortDay = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
-  const longDay = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+  const shortDay = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const longDay = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
   const days = data.daily
     .map(([date, revenue, orders, newCustomers]) => ({ date, revenue, orders, newCustomers }))
@@ -33,6 +55,7 @@
     document.getElementById("period").textContent =
       `Last 28 days (${shortDay.format(toDate(cur[0].date))} – ${shortDay.format(toDate(cur[cur.length - 1].date))}) compared with the 28 days before`;
   }
+  document.getElementById("rate").textContent = `Riel uses 1 USD = ${whole.format(RATE)}៛.`;
 
   function setKpi(id, value, k) {
     document.getElementById("kpi-" + id).textContent = value;
@@ -41,23 +64,26 @@
     el.textContent = v == null ? "—" : pct(v);
     el.className = "chg " + (v == null ? "" : v >= 0 ? "up" : "down");
   }
-  setKpi("revenue", money.format(c.revenue), "revenue");
-  setKpi("orders", count.format(c.orders), "orders");
-  setKpi("aov", money2.format(c.aov), "aov");
-  setKpi("new", count.format(c.newCustomers), "newCustomers");
 
-  const take = document.getElementById("takeaway");
-  const rc = change("revenue");
-  if (rc == null) {
-    take.textContent = `Revenue in the last 28 days: ${money.format(c.revenue)}.`;
-  } else {
-    take.replaceChildren(
-      "Revenue is ",
-      Object.assign(document.createElement("b"), { textContent: rc >= 0 ? "up" : "down", className: rc >= 0 ? "up" : "down" }),
-      " ",
-      Object.assign(document.createElement("b"), { textContent: pct(Math.abs(rc)).replace("+", ""), className: rc >= 0 ? "up" : "down" }),
-      " on the 28 days before."
-    );
+  function drawKpis() {
+    setKpi("revenue", money(c.revenue, { bigCompact: true }), "revenue");
+    setKpi("orders", count.format(c.orders), "orders");
+    setKpi("aov", money(c.aov, { cents: true }), "aov");
+    setKpi("new", count.format(c.newCustomers), "newCustomers");
+
+    const take = document.getElementById("takeaway");
+    const rc = change("revenue");
+    if (rc == null) {
+      take.textContent = `Revenue in the last 28 days: ${money(c.revenue)}.`;
+    } else {
+      take.replaceChildren(
+        "Revenue is ",
+        Object.assign(document.createElement("b"), { textContent: rc >= 0 ? "up" : "down", className: rc >= 0 ? "up" : "down" }),
+        " ",
+        Object.assign(document.createElement("b"), { textContent: pct(Math.abs(rc)).replace("+", ""), className: rc >= 0 ? "up" : "down" }),
+        " on the 28 days before."
+      );
+    }
   }
 
   // Daily revenue chart
@@ -84,9 +110,10 @@
 
     const max = niceMax(Math.max(...days.map((d) => d.revenue)));
     const ticks = [0, max / 4, max / 2, (max * 3) / 4, max];
+    const tickLabel = (t) => money(t, { compact: currency === "KHR" });
     ticks.forEach((t) => {
       const tx = el("text", { class: "tick" }, svg);
-      tx.textContent = money.format(t);
+      tx.textContent = tickLabel(t);
       m.l = Math.max(m.l, tx.getComputedTextLength());
       tx.remove();
     });
@@ -101,7 +128,7 @@
     ticks.forEach((t) => {
       el("line", { class: "grid", x1: m.l, x2: W - m.r, y1: y(t), y2: y(t) }, svg);
       const tx = el("text", { class: "tick", x: m.l - 8, y: y(t), dy: "0.32em", "text-anchor": "end" }, svg);
-      tx.textContent = money.format(t);
+      tx.textContent = tickLabel(t);
     });
 
     const bars = days.map((d, i) =>
@@ -142,7 +169,7 @@
       a.className = "d";
       a.textContent = longDay.format(toDate(d.date));
       const b = document.createElement("div");
-      b.textContent = `${money.format(d.revenue)} · ${count.format(d.orders)} orders`;
+      b.textContent = `${money(d.revenue)} · ${count.format(d.orders)} orders`;
       tip.append(a, b);
       tip.hidden = false;
       const left = (bx(i) + bw / 2) * scale - tip.offsetWidth / 2;
@@ -157,11 +184,6 @@
     hit.addEventListener("pointerdown", show);
     hit.addEventListener("pointerleave", hide);
   }
-  drawChart();
-  let lastW = chart.clientWidth;
-  window.addEventListener("resize", () => {
-    if (chart.clientWidth !== lastW) { lastW = chart.clientWidth; drawChart(); }
-  });
 
   // Tables
   function row(cells) {
@@ -175,20 +197,46 @@
     return tr;
   }
 
-  const products = document.getElementById("products");
-  [...data.products]
-    .sort((a, b) => b[3] - a[3])
-    .forEach(([name, category, units, revenue]) => {
-      products.appendChild(row([[name], [category, "hide-sm"], [count.format(units), "num"], [money.format(revenue), "num"]]));
-    });
+  function drawTables() {
+    const products = document.getElementById("products");
+    products.replaceChildren();
+    [...data.products]
+      .sort((a, b) => b[3] - a[3])
+      .forEach(([name, category, units, revenue]) => {
+        products.appendChild(row([[name], [category, "hide-sm"], [count.format(units), "num"], [money(revenue), "num"]]));
+      });
 
-  const orders = document.getElementById("orders");
-  [...data.orders]
-    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-    .forEach(([id, date, item, amount, status]) => {
-      const pill = document.createElement("span");
-      pill.className = "status " + String(status).toLowerCase();
-      pill.textContent = status;
-      orders.appendChild(row([[id], [shortDay.format(toDate(date))], [item, "hide-sm"], [money.format(amount), "num"], [pill]]));
-    });
+    const orders = document.getElementById("orders");
+    orders.replaceChildren();
+    [...data.orders]
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .forEach(([id, date, item, amount, status]) => {
+        const pill = document.createElement("span");
+        pill.className = "status " + String(status).toLowerCase();
+        pill.textContent = status;
+        orders.appendChild(row([[id], [shortDay.format(toDate(date))], [item, "hide-sm"], [money(amount), "num"], [pill]]));
+      });
+  }
+
+  // Currency switch
+  const buttons = document.querySelectorAll(".cur-toggle button");
+  function render() {
+    buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.cur === currency)));
+    drawKpis();
+    drawChart();
+    drawTables();
+  }
+  buttons.forEach((b) =>
+    b.addEventListener("click", () => {
+      currency = b.dataset.cur;
+      try { localStorage.setItem("dashboard-currency", currency); } catch (e) {}
+      render();
+    })
+  );
+
+  render();
+  let lastW = chart.clientWidth;
+  window.addEventListener("resize", () => {
+    if (chart.clientWidth !== lastW) { lastW = chart.clientWidth; drawChart(); }
+  });
 })();
